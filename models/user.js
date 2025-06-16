@@ -1,22 +1,22 @@
-const pool = require('../config/db');
+const { PrismaClient } = require('../generated/prisma');
+const prisma = new PrismaClient();
 
 const User = {
-  async findByEmail(email) {
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    return rows[0];
+  async getByEmail(email) {
+    return await prisma.users.findUnique({ where: { email } });
   },
-
-  async create({ name, email, password_hash, is_admin = false }) {
-    const [result] = await pool.query(
-      'INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, ?)',
-      [name, email, password_hash, is_admin]
-    );
-    return { id: result.insertId, name, email, is_admin };
+  async getById(id) {
+    return await prisma.users.findUnique({ where: { id: Number(id) } });
   },
-
-  async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
-    return rows[0];
+  async create(data) {
+    return await prisma.users.create({ data });
+  },
+  async update(id, data) {
+    return await prisma.users.update({ where: { id: Number(id) }, data });
+  },
+  async remove(id) {
+    await prisma.users.delete({ where: { id: Number(id) } });
+    return true;
   }
 };
 

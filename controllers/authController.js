@@ -8,7 +8,7 @@ const register = async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
   try {
-    const existingUser = await User.findByEmail(email);
+    const existingUser = await User.getByEmail(email);
     if (existingUser) {
       return res.status(409).json({ message: 'Email already in use' });
     }
@@ -26,7 +26,7 @@ const login = async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
   try {
-    const user = await User.findByEmail(email);
+    const user = await User.getByEmail(email);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

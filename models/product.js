@@ -1,30 +1,21 @@
-const pool = require('../config/db');
+const { PrismaClient } = require('../generated/prisma');
+const prisma = new PrismaClient();
 
 const Product = {
   async getAll() {
-    const [rows] = await pool.query('SELECT * FROM products');
-    return rows;
+    return await prisma.products.findMany();
   },
   async getById(id) {
-    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-    return rows[0];
+    return await prisma.products.findUnique({ where: { id: Number(id) } });
   },
-  async create({ name, description, price, image_url, quality, size, stock }) {
-    const [result] = await pool.query(
-      'INSERT INTO products (name, description, price, image_url, quality, size, stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, description, price, image_url, quality, size, stock]
-    );
-    return { id: result.insertId, name, description, price, image_url, quality, size, stock };
+  async create(data) {
+    return await prisma.products.create({ data });
   },
-  async update(id, { name, description, price, image_url, quality, size, stock }) {
-    await pool.query(
-      'UPDATE products SET name=?, description=?, price=?, image_url=?, quality=?, size=?, stock=? WHERE id=?',
-      [name, description, price, image_url, quality, size, stock, id]
-    );
-    return this.getById(id);
+  async update(id, data) {
+    return await prisma.products.update({ where: { id: Number(id) }, data });
   },
   async remove(id) {
-    await pool.query('DELETE FROM products WHERE id = ?', [id]);
+    await prisma.products.delete({ where: { id: Number(id) } });
     return true;
   }
 };
