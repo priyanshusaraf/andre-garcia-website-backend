@@ -69,6 +69,13 @@ const Product = {
     });
   },
 
+  async setNew(id, is_new) {
+    return await prisma.products.update({
+      where: { id: Number(id) },
+      data: { is_new }
+    });
+  },
+
   async setSale(id, saleData) {
     const { discount_percent, sale_start_date, sale_end_date, on_sale } = saleData;
     const product = await this.getById(id);

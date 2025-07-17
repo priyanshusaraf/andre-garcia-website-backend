@@ -7,6 +7,8 @@ const SaleBanner = require('../models/saleBanner');
 
 // Public routes
 router.get('/', getAllProducts);
+
+// Specific named routes MUST come before the dynamic /:id route
 router.get('/featured', async (req, res) => {
   try {
     const products = await Product.getFeatured();
@@ -34,6 +36,18 @@ router.get('/sale-banners', async (req, res) => {
   }
 });
 
+router.get('/hero-images', async (req, res) => {
+  try {
+    const AdminSettings = require('../models/adminSettings');
+    const heroImages = await AdminSettings.get('hero_images');
+    const images = heroImages ? JSON.parse(heroImages) : [];
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Dynamic route MUST come after all specific routes
 router.get('/:id', getProductById);
 
 // Admin-only routes

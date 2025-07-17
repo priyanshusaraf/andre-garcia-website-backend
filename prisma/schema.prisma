@@ -71,6 +71,7 @@ model products {
   category        String?       @db.VarChar(50)
   capacity        String?       @db.VarChar(50)
   is_featured     Boolean?      @default(false)
+  is_new          Boolean?      @default(false)
   discount_percent Decimal?     @db.Decimal(5, 2) 
   sale_price      Decimal?      @db.Decimal(10, 2)
   on_sale         Boolean?      @default(false)

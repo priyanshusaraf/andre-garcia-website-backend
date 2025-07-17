@@ -17,6 +17,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve static files for uploaded images
+app.use('/uploads', express.static('uploads'));
+
 // Health check route
 app.get('/', (req, res) => {
   res.json({ message: 'API is running' });

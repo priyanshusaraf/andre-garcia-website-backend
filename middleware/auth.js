@@ -12,10 +12,17 @@ function authenticateToken(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!req.user || !req.user.is_admin) {
+  if (!req.user || (!req.user.is_admin && !req.user.is_super_admin)) {
     return res.status(403).json({ message: 'Admin access required' });
   }
   next();
 }
 
-module.exports = { authenticateToken, requireAdmin }; 
+function requireSuperAdmin(req, res, next) {
+  if (!req.user || !req.user.is_super_admin) {
+    return res.status(403).json({ message: 'Super admin access required' });
+  }
+  next();
+}
+
+module.exports = { authenticateToken, requireAdmin, requireSuperAdmin }; 

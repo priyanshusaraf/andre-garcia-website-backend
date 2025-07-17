@@ -178,6 +178,17 @@ async function setProductFeatured(req, res) {
   }
 }
 
+async function setProductNew(req, res) {
+  const { id } = req.params;
+  const { is_new } = req.body;
+  try {
+    const product = await Product.setNew(id, is_new);
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
 async function setProductSale(req, res) {
   const { id } = req.params;
   const saleData = req.body;
@@ -256,6 +267,67 @@ async function updateProductStock(req, res) {
   }
 }
 
+// HERO IMAGES MANAGEMENT
+async function getHeroImages(req, res) {
+  try {
+    const heroImages = await AdminSettings.get('hero_images');
+    const images = heroImages ? JSON.parse(heroImages) : [];
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function updateHeroImages(req, res) {
+  try {
+    const { images } = req.body;
+    await AdminSettings.set('hero_images', JSON.stringify(images));
+    res.json({ message: 'Hero images updated successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+// IMAGE UPLOAD FUNCTIONS
+async function uploadProductImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    const imageUrl = `http://localhost:5000/uploads/products/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function uploadBannerImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    const imageUrl = `http://localhost:5000/uploads/banners/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function uploadHeroImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    const imageUrl = `http://localhost:5000/uploads/hero/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
 module.exports = {
   // Orders
   getAllOrders,
@@ -274,6 +346,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   setProductFeatured,
+  setProductNew,
   setProductSale,
   updateProductStock, // Legacy
   
@@ -282,5 +355,14 @@ module.exports = {
   createSaleBanner,
   updateSaleBanner,
   deleteSaleBanner,
-  setSaleBannerActive
+  setSaleBannerActive,
+  
+  // Hero Images
+  getHeroImages,
+  updateHeroImages,
+  
+  // Image Uploads
+  uploadProductImage,
+  uploadBannerImage,
+  uploadHeroImage
 }; 
