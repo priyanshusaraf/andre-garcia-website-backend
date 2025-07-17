@@ -1,4 +1,5 @@
 const Order = require('../models/order');
+const User = require('../models/user');
 
 const getOrdersByUser = async (req, res) => {
   try {
@@ -42,4 +43,13 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrdersByUser, getOrderById, createOrder, updateOrderStatus }; 
+const getNotifications = async (req, res) => {
+  try {
+    const notifications = await User.getNotifications(req.user.id);
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { getOrdersByUser, getOrderById, createOrder, updateOrderStatus, getNotifications }; 

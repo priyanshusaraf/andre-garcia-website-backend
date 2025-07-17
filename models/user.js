@@ -17,6 +17,12 @@ const User = {
   async remove(id) {
     await prisma.users.delete({ where: { id: Number(id) } });
     return true;
+  },
+  async getNotifications(user_id) {
+    return await prisma.notifications.findMany({
+      where: { user_id: Number(user_id) },
+      orderBy: { created_at: 'desc' }
+    });
   }
 };
 

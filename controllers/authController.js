@@ -2,6 +2,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
+// Hardcoded admin credentials
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'Admin@123!'
+};
+
 const register = async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -41,4 +47,39 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login }; 
+const adminLogin = async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required' });
+  }
+  
+  try {
+    // Check hardcoded admin credentials
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      // Create admin token with special admin properties
+      const token = jwt.sign({ 
+        id: 'admin', 
+        username: 'admin', 
+        is_admin: true,
+        is_super_admin: true 
+      }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      
+      res.json({ 
+        token, 
+        user: { 
+          id: 'admin', 
+          name: 'Administrator', 
+          username: 'admin',
+          is_admin: true,
+          is_super_admin: true
+        } 
+      });
+    } else {
+      return res.status(401).json({ message: 'Invalid admin credentials' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { register, login, adminLogin }; 

@@ -1,7 +1,27 @@
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
+const bcrypt = require('bcrypt');
 
 async function main() {
+  // Seed admin user
+  const adminEmail = 'admin@ag.com';
+  const adminPassword = 'admin123';
+  const existingAdmin = await prisma.users.findUnique({ where: { email: adminEmail } });
+  if (!existingAdmin) {
+    const password_hash = await bcrypt.hash(adminPassword, 10);
+    await prisma.users.create({
+      data: {
+        name: 'Admin',
+        email: adminEmail,
+        password_hash,
+        is_admin: true,
+      }
+    });
+    console.log('Admin user created:', adminEmail);
+  } else {
+    console.log('Admin user already exists:', adminEmail);
+  }
+
   await prisma.products.createMany({
     data: [
       {
