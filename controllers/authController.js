@@ -74,7 +74,7 @@ const adminLogin = async (req, res) => {
     if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
       // Create admin token with special admin properties
       const token = jwt.sign({ 
-        id: 'admin', 
+        id: 999999, // Use a numeric ID for admin
         username: 'admin', 
         is_admin: true,
         is_super_admin: true 
@@ -83,7 +83,7 @@ const adminLogin = async (req, res) => {
       res.json({ 
         token, 
         user: { 
-          id: 'admin', 
+          id: 999999, // Use a numeric ID for admin
           name: 'Administrator', 
           username: 'admin',
           is_admin: true,
@@ -98,4 +98,69 @@ const adminLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, adminLogin }; 
+const updateProfile = async (req, res) => {
+  const { name, email, phone, currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Get current user
+    const user = await User.getById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate required fields
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required' });
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await User.getByEmail(email);
+    if (existingUser && existingUser.id !== userId) {
+      return res.status(409).json({ message: 'Email already in use' });
+    }
+
+    // Prepare update data
+    const updateData = {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone ? phone.trim() : null
+    };
+
+    // Handle password change if provided
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required to change password' });
+      }
+
+      // Verify current password
+      const match = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!match) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      // Hash new password
+      updateData.password_hash = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Update user
+    const updatedUser = await User.update(userId, updateData);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        is_admin: updatedUser.is_admin
+      }
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { register, login, adminLogin, updateProfile }; 

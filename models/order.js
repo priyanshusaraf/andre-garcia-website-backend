@@ -50,15 +50,16 @@ const Order = {
       return order;
     });
   },
-  async updateStatus(id, status) {
+  async updateStatus(id, status, trackingNumber = null) {
     return await prisma.$transaction(async (tx) => {
       const order = await tx.orders.findUnique({
         where: { id: Number(id) },
         include: { order_items: true }
       });
       if (!order) throw new Error('Order not found');
-      // If cancelling, restore stock
-      if (status === 'cancelled') {
+      
+      // If rejecting, restore stock
+      if (status === 'rejected') {
         for (const item of order.order_items) {
           await tx.products.update({
             where: { id: item.product_id },
@@ -66,22 +67,60 @@ const Order = {
           });
         }
       }
+      
+      // Prepare update data
+      const updateData = { status };
+      if (trackingNumber && status === 'in_transit') {
+        updateData.tracking_number = trackingNumber;
+      }
+      
       // Update order status
       const updatedOrder = await tx.orders.update({
         where: { id: Number(id) },
-        data: { status }
+        data: updateData,
+        include: { order_items: { include: { products: true } } }
       });
+      
       // Create notification for user
-      if (status === 'delivered' || status === 'cancelled') {
-        await tx.notifications.create({
-          data: {
-            user_id: order.user_id,
-            message: status === 'delivered' ? 'Your order has been accepted!' : 'Your order was cancelled.',
-            read: false
-          }
-        });
+      let notificationMessage = '';
+      switch (status) {
+        case 'in_transit':
+          notificationMessage = `Your order #${id} is now in transit!${trackingNumber ? ` Tracking number: ${trackingNumber}` : ''}`;
+          break;
+        case 'completed':
+          notificationMessage = `Your order #${id} has been completed!`;
+          break;
+        case 'rejected':
+          notificationMessage = `Your order #${id} has been rejected. Please contact support for more information.`;
+          break;
+        case 'confirmed':
+          notificationMessage = `Your order #${id} has been confirmed and is being processed!`;
+          break;
       }
+      
+      if (notificationMessage) {
+        try {
+          await tx.notifications.create({
+            data: {
+              user_id: order.user_id,
+              message: notificationMessage,
+              read: false
+            }
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notification:', notificationError);
+          // Don't fail the entire transaction for notification errors
+        }
+      }
+      
       return updatedOrder;
+    });
+  },
+
+  async getOrderItems(orderId) {
+    return await prisma.order_items.findMany({
+      where: { order_id: Number(orderId) },
+      include: { products: true }
     });
   }
 };

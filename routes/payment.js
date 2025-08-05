@@ -5,7 +5,6 @@ const {
   getUserOrders, 
   getOrderDetails,
   getAllOrders,
-  updateOrderStatus,
   getDashboardStats
 } = require('../controllers/paymentController');
 const { authenticateToken } = require('../middleware/auth');
@@ -20,7 +19,6 @@ router.get('/orders/:orderId', authenticateToken, getOrderDetails);
 
 // Admin routes (protected + admin required)
 router.get('/admin/orders', authenticateToken, getAllOrders);
-router.put('/admin/orders/:orderId', authenticateToken, updateOrderStatus);
 router.get('/admin/dashboard-stats', authenticateToken, getDashboardStats);
 
 module.exports = router; 

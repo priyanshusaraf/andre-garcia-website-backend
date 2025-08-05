@@ -24,13 +24,32 @@ async function getAllOrders(req, res) {
 
 async function updateOrderStatus(req, res) {
   const { id } = req.params;
-  const { status } = req.body;
-  if (!['delivered', 'cancelled'].includes(status)) {
-    return res.status(400).json({ message: 'Invalid status' });
+  const { status, trackingNumber } = req.body;
+  
+  console.log('Admin controller - Received update request:', { id, status, trackingNumber, body: req.body });
+  console.log('Admin controller - Status type:', typeof status);
+  console.log('Admin controller - Status value:', status);
+  console.log('Admin controller - Status JSON:', JSON.stringify(status));
+  console.log('Admin controller - Status length:', status?.length);
+  
+  // Validate status
+  const validStatuses = ['pending', 'rejected', 'in_transit', 'completed', 'confirmed'];
+  if (!status || !validStatuses.includes(status.trim())) {
+    console.log('Invalid status:', status);
+    console.log('Valid statuses:', validStatuses);
+    console.log('Status includes check:', validStatuses.map(s => ({ status: s, matches: s === status })));
+    return res.status(400).json({ message: 'Invalid status. Must be: pending, rejected, in_transit, completed, or confirmed' });
   }
+  
+  // Validate tracking number for in_transit status
+  if (status === 'in_transit' && (!trackingNumber || trackingNumber.trim() === '')) {
+    console.log('Missing tracking number for in_transit status');
+    return res.status(400).json({ message: 'Tracking number is required when status is in_transit' });
+  }
+  
   try {
-    const order = await Order.updateStatus(id, status);
-    res.json(order);
+    const order = await Order.updateStatus(id, status, trackingNumber);
+    res.json({ success: true, order });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -77,6 +96,41 @@ async function getStats(req, res) {
       _count: { id: true }
     });
 
+    // Monthly revenue for last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const monthlyRevenue = await prisma.orders.groupBy({
+      by: ['created_at'],
+      _sum: { total_amount: true },
+      _count: { id: true },
+      where: {
+        created_at: { gte: sixMonthsAgo },
+        status: { not: 'rejected' } // Only count non-rejected orders
+      },
+      orderBy: { created_at: 'asc' }
+    });
+
+    // Process monthly revenue data
+    const monthlyRevenueData = {};
+    monthlyRevenue.forEach(item => {
+      const date = new Date(item.created_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyRevenueData[monthKey]) {
+        monthlyRevenueData[monthKey] = { revenue: 0, orders: 0 };
+      }
+      
+      monthlyRevenueData[monthKey].revenue += parseFloat(item._sum.total_amount || 0);
+      monthlyRevenueData[monthKey].orders += item._count.id;
+    });
+
+    // Order status for fulfillment tracking
+    const pendingOrders = await prisma.orders.count({ where: { status: 'pending' } });
+    const confirmedOrders = await prisma.orders.count({ where: { status: 'confirmed' } });
+    const inTransitOrders = await prisma.orders.count({ where: { status: 'in_transit' } });
+    const completedOrders = await prisma.orders.count({ where: { status: 'completed' } });
+
     res.json({
       totalOrders,
       totalRevenue: totalRevenue._sum.total_amount || 0,
@@ -85,7 +139,16 @@ async function getStats(req, res) {
       totalProducts,
       activeProducts,
       ordersPerDay,
-      orderStatusStats
+      orderStatusStats,
+      monthlyRevenueData,
+      fulfillmentStats: {
+        pending: pendingOrders,
+        confirmed: confirmedOrders,
+        inTransit: inTransitOrders,
+        completed: completedOrders
+      },
+      pendingOrders,
+      totalCompletedOrders: completedOrders
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -138,10 +201,14 @@ async function getAllProducts(req, res) {
 
 async function createProduct(req, res) {
   try {
+    console.log('Creating product with data:', req.body);
     const productData = req.body;
     const product = await Product.create(productData);
+    console.log('Product created successfully:', product);
     res.status(201).json(product);
   } catch (err) {
+    console.error('Product creation error:', err);
+    console.error('Stack trace:', err.stack);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 }

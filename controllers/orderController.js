@@ -4,9 +4,9 @@ const User = require('../models/user');
 const getOrdersByUser = async (req, res) => {
   try {
     const orders = await Order.getByUserId(req.user.id);
-    res.json(orders);
+    res.json({ success: true, orders });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
@@ -34,6 +34,7 @@ const createOrder = async (req, res) => {
 };
 
 const updateOrderStatus = async (req, res) => {
+  console.log('OrderController updateOrderStatus called!', { params: req.params, body: req.body });
   try {
     const { status } = req.body;
     const order = await Order.updateStatus(req.params.id, status);

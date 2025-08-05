@@ -42,11 +42,32 @@ const Product = {
   },
 
   async create(data) {
-    // Calculate sale_price if discount_percent is provided
-    if (data.discount_percent && data.price) {
-      data.sale_price = data.price * (1 - data.discount_percent / 100);
+    // Clean and ensure numeric fields are properly converted
+    const productData = {
+      name: data.name || '',
+      description: data.description || null,
+      price: parseFloat(data.price) || 0,
+      image_url: data.image_url || null,
+      quality: data.quality || null,
+      size: data.size || null,
+      stock: data.stock ? parseInt(data.stock) : 0,
+      rating: data.rating ? parseFloat(data.rating) : 0,
+      reviews: data.reviews ? parseInt(data.reviews) : 0,
+      badge: data.badge || null,
+      badgeVariant: data.badgeVariant || null,
+      category: data.category || null,
+      capacity: data.capacity || null
+    };
+
+    // Only include optional fields if they have actual values
+    if (data.discount_percent && parseFloat(data.discount_percent) > 0) {
+      productData.discount_percent = parseFloat(data.discount_percent);
+      productData.sale_price = productData.price * (1 - productData.discount_percent / 100);
     }
-    return await prisma.products.create({ data });
+
+    console.log('Processed product data for creation:', productData);
+    
+    return await prisma.products.create({ data: productData });
   },
 
   async update(id, data) {

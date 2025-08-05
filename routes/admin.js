@@ -9,7 +9,16 @@ router.use(authenticateToken, requireAdmin);
 
 // ORDERS MANAGEMENT
 router.get('/orders', adminController.getAllOrders);
-router.patch('/orders/:id', adminController.updateOrderStatus);
+router.patch('/orders/:id', (req, res, next) => {
+  console.log('Admin route hit - PATCH /orders/:id', { params: req.params, body: req.body });
+  next();
+}, adminController.updateOrderStatus);
+
+// Test endpoint
+router.post('/test-status', (req, res) => {
+  console.log('Test endpoint hit:', req.body);
+  res.json({ received: req.body });
+});
 
 // STATS AND ANALYTICS
 router.get('/stats', adminController.getStats);

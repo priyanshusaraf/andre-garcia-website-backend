@@ -49,4 +49,36 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct }; 
+const getFeaturedProducts = async (req, res) => {
+  try {
+    // Return first 3 products as featured for now
+    const products = await Product.getAll();
+    const featuredProducts = products.slice(0, 3);
+    res.json(featuredProducts);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const getHeroImages = async (req, res) => {
+  try {
+    const AdminSettings = require('../models/adminSettings');
+    const heroImages = await AdminSettings.get('hero_images');
+    const images = heroImages ? JSON.parse(heroImages) : [];
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const getSaleBanners = async (req, res) => {
+  try {
+    const SaleBanner = require('../models/saleBanner');
+    const banners = await SaleBanner.getActive();
+    res.json(banners);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, getFeaturedProducts, getHeroImages, getSaleBanners }; 

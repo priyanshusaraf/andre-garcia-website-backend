@@ -312,49 +312,7 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-// Admin: Update order status
-const updateOrderStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { status, notes } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
-    }
-
-    const order = await prisma.orders.update({
-      where: { id: parseInt(orderId) },
-      data: {
-        status,
-        notes: notes || undefined,
-        updated_at: new Date(),
-      },
-      include: {
-        order_items: {
-          include: {
-            products: true,
-          },
-        },
-        users: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    res.json({
-      success: true,
-      message: 'Order status updated successfully',
-      order,
-    });
-  } catch (error) {
-    console.error('Update order status error:', error);
-    res.status(500).json({ message: 'Failed to update order status', error: error.message });
-  }
-};
 
 // Get dashboard statistics
 const getDashboardStats = async (req, res) => {
@@ -423,6 +381,5 @@ module.exports = {
   getUserOrders,
   getOrderDetails,
   getAllOrders,
-  updateOrderStatus,
   getDashboardStats,
 }; 

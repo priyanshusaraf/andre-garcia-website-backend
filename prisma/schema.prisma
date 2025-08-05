@@ -47,16 +47,18 @@ model orders {
   id             Int           @id @default(autoincrement())
   user_id        Int
   total_amount   Decimal       @db.Decimal(10, 2)
-  status         String?       @default("pending") @db.VarChar(50) // pending, confirmed, processing, shipped, delivered, cancelled
+  status         String?       @default("pending") @db.VarChar(50) // pending, rejected, in_transit, completed
   payment_status String?       @default("pending") @db.VarChar(50) // pending, completed, failed, refunded
   payment_id     String?       @db.VarChar(255) // Razorpay payment ID
   order_id_razorpay String?    @db.VarChar(255) // Razorpay order ID
   receipt_url    String?       @db.VarChar(500) // Receipt/invoice URL
   shipping_address String?     @db.Text // Shipping address
   notes          String?       @db.Text // Order notes
+  tracking_number String?      @db.VarChar(100) // Tracking number for shipping
   created_at     DateTime?     @default(now()) @db.Timestamp(0)
   updated_at     DateTime?     @updatedAt @db.Timestamp(0)
   order_items    order_items[]
+  order_reviews  reviews[]
   users          users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
 
   @@index([user_id], map: "user_id")
@@ -90,6 +92,7 @@ model products {
   updated_at      DateTime?     @updatedAt @db.Timestamp(0)
   cart_items      cart_items[]
   order_items     order_items[]
+  product_reviews reviews[]
 }
 
 model users {
@@ -97,11 +100,13 @@ model users {
   name          String          @db.VarChar(100)
   email         String          @unique(map: "email") @db.VarChar(100)
   password_hash String          @db.VarChar(255)
+  phone         String?         @db.VarChar(20)
   is_admin      Boolean?        @default(false)
   created_at    DateTime?       @default(now()) @db.Timestamp(0)
   carts         carts[]
   orders        orders[]
   notifications notifications[]
+  user_reviews  reviews[]
 }
 
 model notifications {
@@ -126,6 +131,25 @@ model sale_banners {
   end_date    DateTime? @db.Timestamp(0)
   created_at  DateTime? @default(now()) @db.Timestamp(0)
   updated_at  DateTime? @updatedAt @db.Timestamp(0)
+}
+
+model reviews {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  order_id   Int
+  rating     Int      @db.TinyInt // 1-5 stars
+  comment    String?  @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @updatedAt @db.Timestamp(0)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders     orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, product_id, order_id], map: "unique_user_product_order_review")
+  @@index([user_id], map: "reviews_user_id")
+  @@index([product_id], map: "reviews_product_id")
+  @@index([order_id], map: "reviews_order_id")
 }
 
 model admin_settings {
