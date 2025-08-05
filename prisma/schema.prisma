@@ -44,15 +44,24 @@ model order_items {
 }
 
 model orders {
-  id           Int           @id @default(autoincrement())
-  user_id      Int
-  total_amount Decimal       @db.Decimal(10, 2)
-  status       String?       @default("pending") @db.VarChar(50)
-  created_at   DateTime?     @default(now()) @db.Timestamp(0)
-  order_items  order_items[]
-  users        users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
+  id             Int           @id @default(autoincrement())
+  user_id        Int
+  total_amount   Decimal       @db.Decimal(10, 2)
+  status         String?       @default("pending") @db.VarChar(50) // pending, confirmed, processing, shipped, delivered, cancelled
+  payment_status String?       @default("pending") @db.VarChar(50) // pending, completed, failed, refunded
+  payment_id     String?       @db.VarChar(255) // Razorpay payment ID
+  order_id_razorpay String?    @db.VarChar(255) // Razorpay order ID
+  receipt_url    String?       @db.VarChar(500) // Receipt/invoice URL
+  shipping_address String?     @db.Text // Shipping address
+  notes          String?       @db.Text // Order notes
+  created_at     DateTime?     @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?     @updatedAt @db.Timestamp(0)
+  order_items    order_items[]
+  users          users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
 
   @@index([user_id], map: "user_id")
+  @@index([payment_id], map: "payment_id")
+  @@unique([order_id_razorpay], map: "order_id_razorpay_unique")
 }
 
 model products {
