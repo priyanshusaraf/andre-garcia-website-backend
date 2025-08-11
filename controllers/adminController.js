@@ -5,6 +5,56 @@ const SaleBanner = require('../models/saleBanner');
 const AdminSettings = require('../models/adminSettings');
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
+// GALLERY IMAGES (Admin CRUD)
+async function getAdminGalleryImages(req, res) {
+  try {
+    const images = await prisma.gallery_images.findMany({
+      orderBy: { sort_order: 'asc' }
+    });
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function createAdminGalleryImage(req, res) {
+  try {
+    const { image_url, title, description, is_active = true, sort_order = 0 } = req.body;
+    if (!image_url || !title) {
+      return res.status(400).json({ message: 'image_url and title are required' });
+    }
+    const created = await prisma.gallery_images.create({
+      data: { image_url, title, description, is_active, sort_order }
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function updateAdminGalleryImage(req, res) {
+  const { id } = req.params;
+  try {
+    const { image_url, title, description, is_active, sort_order } = req.body;
+    const updated = await prisma.gallery_images.update({
+      where: { id: Number(id) },
+      data: { image_url, title, description, is_active, sort_order }
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+async function deleteAdminGalleryImage(req, res) {
+  const { id } = req.params;
+  try {
+    await prisma.gallery_images.delete({ where: { id: Number(id) } });
+    res.json({ message: 'Gallery image deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
 
 // ORDERS MANAGEMENT
 async function getAllOrders(req, res) {
@@ -431,5 +481,11 @@ module.exports = {
   // Image Uploads
   uploadProductImage,
   uploadBannerImage,
-  uploadHeroImage
+  uploadHeroImage,
+
+  // Gallery Images (Admin)
+  getAdminGalleryImages,
+  createAdminGalleryImage,
+  updateAdminGalleryImage,
+  deleteAdminGalleryImage
 }; 

@@ -48,6 +48,12 @@ router.patch('/sale-banners/:id/active', adminController.setSaleBannerActive);
 router.get('/hero-images', adminController.getHeroImages);
 router.put('/hero-images', adminController.updateHeroImages);
 
+// GALLERY IMAGES MANAGEMENT
+router.get('/gallery-images', adminController.getAdminGalleryImages);
+router.post('/gallery-images', adminController.createAdminGalleryImage);
+router.put('/gallery-images/:id', adminController.updateAdminGalleryImage);
+router.delete('/gallery-images/:id', adminController.deleteAdminGalleryImage);
+
 // IMAGE UPLOAD ROUTES
 router.post('/upload/product-image', productUpload, adminController.uploadProductImage);
 router.post('/upload/banner-image', bannerUpload, adminController.uploadBannerImage);
